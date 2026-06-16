@@ -1,0 +1,265 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Interactive Audit Backend API",
+    "version": "0.1.0",
+    "description": "Backend API for expert analysis of interactive publications."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:8000",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Backend status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/rubric": {
+      "get": {
+        "summary": "Evaluation rubric",
+        "responses": {
+          "200": {
+            "description": "List of evaluation criteria",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["criteria"],
+                  "properties": {
+                    "criteria": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RubricDefinitionItem"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/analyze": {
+      "post": {
+        "summary": "Analyze publication URL",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyzeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Analysis result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyzeResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "404": {
+            "$ref": "#/components/responses/ErrorResponse"
+          },
+          "502": {
+            "$ref": "#/components/responses/ErrorResponse"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "ErrorResponse": {
+        "description": "JSON error response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status", "ai_enabled", "openai_model", "runtime"],
+        "properties": {
+          "status": { "type": "string", "example": "ok" },
+          "ai_enabled": { "type": "boolean" },
+          "openai_model": { "type": "string", "example": "gpt-5.4-mini" },
+          "runtime": { "type": "string", "example": "stdlib-http" }
+        }
+      },
+      "RubricDefinitionItem": {
+        "type": "object",
+        "required": ["key", "name", "description"],
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        }
+      },
+      "AnalyzeRequest": {
+        "type": "object",
+        "required": ["url"],
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 3,
+            "example": "https://example.com"
+          },
+          "use_ai": {
+            "type": "boolean",
+            "default": true
+          },
+          "include_features": {
+            "type": "boolean",
+            "default": true
+          }
+        }
+      },
+      "AnalyzeResponse": {
+        "type": "object",
+        "required": ["status", "page", "features", "rubric", "heuristic_report", "ai"],
+        "properties": {
+          "status": { "type": "string", "example": "ok" },
+          "page": { "$ref": "#/components/schemas/Page" },
+          "features": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/Features" },
+              { "type": "null" }
+            ]
+          },
+          "rubric": { "$ref": "#/components/schemas/RubricResult" },
+          "heuristic_report": { "$ref": "#/components/schemas/HeuristicReport" },
+          "ai": { "$ref": "#/components/schemas/AIResult" }
+        }
+      },
+      "Page": {
+        "type": "object",
+        "required": ["requested_url", "final_url", "status_code", "content_type", "elapsed_ms", "fetched_at", "warnings"],
+        "properties": {
+          "requested_url": { "type": "string" },
+          "final_url": { "type": "string" },
+          "status_code": { "type": ["integer", "null"] },
+          "content_type": { "type": "string" },
+          "elapsed_ms": { "type": "integer" },
+          "fetched_at": { "type": "string" },
+          "warnings": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "Features": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "language": { "type": "string" },
+          "word_count": { "type": "integer" },
+          "headings": { "type": "object" },
+          "interactive_elements_count": { "type": "integer" },
+          "images_count": { "type": "integer" },
+          "videos_count": { "type": "integer" },
+          "evidence": { "type": "object" }
+        }
+      },
+      "RubricResult": {
+        "type": "object",
+        "required": ["overall_score", "criteria", "strengths", "weaknesses", "recommendations"],
+        "properties": {
+          "overall_score": { "type": "number" },
+          "criteria": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CriterionResult" }
+          },
+          "strengths": { "type": "array", "items": { "type": "string" } },
+          "weaknesses": { "type": "array", "items": { "type": "string" } },
+          "recommendations": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "CriterionResult": {
+        "type": "object",
+        "required": ["key", "name", "score", "findings", "recommendations", "evidence"],
+        "properties": {
+          "key": { "type": "string" },
+          "name": { "type": "string" },
+          "score": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "findings": { "type": "array", "items": { "type": "string" } },
+          "recommendations": { "type": "array", "items": { "type": "string" } },
+          "evidence": { "type": "object" }
+        }
+      },
+      "HeuristicReport": {
+        "type": "object",
+        "required": ["summary", "advantages", "problems", "recommendations", "method_note", "source"],
+        "properties": {
+          "summary": { "type": "string" },
+          "advantages": { "type": "array", "items": { "type": "string" } },
+          "problems": { "type": "array", "items": { "type": "string" } },
+          "recommendations": { "type": "array", "items": { "type": "string" } },
+          "method_note": { "type": "string" },
+          "source": { "type": "object" }
+        }
+      },
+      "AIResult": {
+        "type": "object",
+        "required": ["used", "model", "report", "error"],
+        "properties": {
+          "used": { "type": "boolean" },
+          "model": { "type": ["string", "null"] },
+          "report": {
+            "oneOf": [
+              { "$ref": "#/components/schemas/AIReport" },
+              { "type": "null" }
+            ]
+          },
+          "error": { "type": ["string", "null"] }
+        }
+      },
+      "AIReport": {
+        "type": "object",
+        "properties": {
+          "summary": { "type": "string" },
+          "advantages": { "type": "array", "items": { "type": "string" } },
+          "problems": { "type": "array", "items": { "type": "string" } },
+          "recommendations": { "type": "array", "items": { "type": "string" } },
+          "cognitive_load_risk": { "type": "string" },
+          "manual_checks": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "required": ["error"],
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}

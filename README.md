@@ -23,6 +23,20 @@
 - Детерминированный отчет без API-ключа.
 - AI-отчет через OpenAI Responses API при наличии ключа.
 
+## API для frontend
+
+Подробный контракт API описан в [docs/API.md](docs/API.md).
+
+Для быстрой интеграции:
+
+- base URL локально: `http://127.0.0.1:8000`
+- основной endpoint: `POST /api/analyze`
+- обязательное поле запроса: `url`
+- если `include_features=false`, поле `features` вернется как `null`
+- если AI недоступен, backend все равно вернет методический отчет, а `ai.used=false`
+
+OpenAPI-описание лежит в [docs/openapi.json](docs/openapi.json).
+
 ## Быстрый старт
 
 Зависимости для базового запуска не нужны. Достаточно Python 3.11+.
