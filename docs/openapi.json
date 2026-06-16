@@ -108,10 +108,12 @@
     "schemas": {
       "HealthResponse": {
         "type": "object",
-        "required": ["status", "ai_enabled", "openai_model", "runtime"],
+        "required": ["status", "ai_enabled", "ai_provider", "ai_model", "openai_model", "runtime"],
         "properties": {
           "status": { "type": "string", "example": "ok" },
           "ai_enabled": { "type": "boolean" },
+          "ai_provider": { "type": "string", "example": "none" },
+          "ai_model": { "type": ["string", "null"], "example": "gemini-2.5-flash" },
           "openai_model": { "type": "string", "example": "gpt-5.4-mini" },
           "runtime": { "type": "string", "example": "stdlib-http" }
         }
@@ -229,9 +231,10 @@
       },
       "AIResult": {
         "type": "object",
-        "required": ["used", "model", "report", "error"],
+        "required": ["used", "provider", "model", "report", "error"],
         "properties": {
           "used": { "type": "boolean" },
+          "provider": { "type": "string", "example": "none" },
           "model": { "type": ["string", "null"] },
           "report": {
             "oneOf": [

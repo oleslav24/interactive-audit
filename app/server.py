@@ -53,6 +53,8 @@ class ExpertAnalysisHandler(BaseHTTPRequestHandler):
                 {
                     "status": "ok",
                     "ai_enabled": settings.ai_enabled,
+                    "ai_provider": settings.ai_provider,
+                    "ai_model": settings.selected_ai_model,
                     "openai_model": settings.openai_model,
                     "runtime": "stdlib-http",
                 },
@@ -122,9 +124,15 @@ def analyze_url_request(data: dict[str, Any]) -> dict[str, Any]:
     heuristic_report = build_heuristic_report(snapshot, features, rubric_result)
     ai_report = generate_ai_report(
         analysis_payload,
-        api_key=settings.openai_api_key,
-        model=settings.openai_model,
         enabled=use_ai and settings.ai_enabled,
+        provider=settings.ai_provider,
+        openai_api_key=settings.openai_api_key,
+        openai_model=settings.openai_model,
+        gemini_api_key=settings.gemini_api_key,
+        gemini_model=settings.gemini_model,
+        ollama_base_url=settings.ollama_base_url,
+        ollama_model=settings.ollama_model,
+        timeout_seconds=settings.ai_request_timeout_seconds,
     )
 
     return {
@@ -135,6 +143,7 @@ def analyze_url_request(data: dict[str, Any]) -> dict[str, Any]:
         "heuristic_report": heuristic_report,
         "ai": {
             "used": ai_report.used,
+            "provider": ai_report.provider,
             "model": ai_report.model,
             "report": ai_report.report,
             "error": ai_report.error,

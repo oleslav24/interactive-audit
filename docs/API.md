@@ -34,6 +34,8 @@ Response `200`:
 {
   "status": "ok",
   "ai_enabled": true,
+  "ai_provider": "none",
+  "ai_model": null,
   "openai_model": "gpt-5.4-mini",
   "runtime": "stdlib-http"
 }
@@ -42,7 +44,7 @@ Response `200`:
 Frontend use:
 
 - show backend connection status;
-- read currently configured model;
+- read currently configured AI provider and model;
 - do not use this endpoint as an analysis result.
 
 ### `GET /api/rubric`
@@ -199,9 +201,10 @@ Response `200`:
   },
   "ai": {
     "used": false,
-    "model": "gpt-5.4-mini",
+    "provider": "none",
+    "model": null,
     "report": null,
-    "error": "OPENAI_API_KEY is not configured."
+    "error": "AI provider is disabled."
   }
 }
 ```
@@ -218,6 +221,7 @@ AI behavior:
 
 - `ai.used=true` means the response contains an AI-generated `ai.report`.
 - `ai.used=false` is not a request failure by itself. The frontend should still render `heuristic_report` and `rubric`.
+- `ai.provider` is one of `none`, `openai`, `gemini`, `ollama`, or an unsupported configured value.
 - `ai.error` explains why AI was skipped or failed.
 
 AI report shape when available:
@@ -299,8 +303,52 @@ Recommended frontend rendering order:
 | --- | --- | --- |
 | `OPENAI_API_KEY` | empty | Enables AI report generation. |
 | `OPENAI_MODEL` | `gpt-5.4-mini` | Model used for AI report generation. |
+| `AI_PROVIDER` | `none` unless `OPENAI_API_KEY` exists | AI provider: `none`, `openai`, `gemini`, `ollama`. |
 | `AI_ENABLED` | `true` | Global switch for AI calls. |
+| `GEMINI_API_KEY` | empty | Google Gemini API key. |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini model used when `AI_PROVIDER=gemini`. |
+| `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Local Ollama server URL. |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | Ollama model used when `AI_PROVIDER=ollama`. |
+| `AI_REQUEST_TIMEOUT_SECONDS` | `60` | AI provider request timeout. |
 | `ALLOW_PRIVATE_URLS` | `false` | Allows localhost/private IP analysis for demos. |
 | `FETCH_TIMEOUT_SECONDS` | `15` | Target URL fetch timeout. |
 | `FETCH_MAX_BYTES` | `2000000` | Maximum downloaded HTML size. |
 | `CORS_ORIGINS` | FastAPI-only | Used by optional FastAPI app, not by `app.server`. |
+
+## AI provider setup
+
+No AI provider, deterministic analysis only:
+
+```env
+AI_PROVIDER=none
+```
+
+OpenAI:
+
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-5.4-mini
+```
+
+Google Gemini:
+
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
+```
+
+Local Ollama:
+
+```env
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=qwen2.5:7b
+```
+
+For Ollama, install and start Ollama separately, then pull a model, for example:
+
+```powershell
+ollama pull qwen2.5:7b
+```

@@ -41,6 +41,8 @@ def health() -> dict:
     return {
         "status": "ok",
         "ai_enabled": settings.ai_enabled,
+        "ai_provider": settings.ai_provider,
+        "ai_model": settings.selected_ai_model,
         "openai_model": settings.openai_model,
     }
 
@@ -71,9 +73,15 @@ def analyze(request: AnalyzeRequest) -> dict:
 
     ai_report = generate_ai_report(
         payload,
-        api_key=settings.openai_api_key,
-        model=settings.openai_model,
         enabled=request.use_ai and settings.ai_enabled,
+        provider=settings.ai_provider,
+        openai_api_key=settings.openai_api_key,
+        openai_model=settings.openai_model,
+        gemini_api_key=settings.gemini_api_key,
+        gemini_model=settings.gemini_model,
+        ollama_base_url=settings.ollama_base_url,
+        ollama_model=settings.ollama_model,
+        timeout_seconds=settings.ai_request_timeout_seconds,
     )
 
     return {
@@ -84,6 +92,7 @@ def analyze(request: AnalyzeRequest) -> dict:
         "heuristic_report": heuristic_report,
         "ai": {
             "used": ai_report.used,
+            "provider": ai_report.provider,
             "model": ai_report.model,
             "report": ai_report.report,
             "error": ai_report.error,
